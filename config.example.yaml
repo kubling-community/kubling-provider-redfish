@@ -1,0 +1,42 @@
+# The provider validates and resolves this configuration before opening its
+# gRPC listener. Secret values must be supplied by environment or file; inline
+# usernames and passwords are intentionally unsupported.
+listen: "0.0.0.0:50051"
+
+profiles:
+  - inventory-core
+
+credentials:
+  rack_a:
+    username:
+      env: REDFISH_RACK_A_USERNAME
+    password:
+      file: /run/secrets/redfish-rack-a-password
+
+devices:
+  - namespace: dc-a/rack-01
+    deviceId: bmc-01
+    endpoint: https://bmc-01.example.invalid
+    credential: rack_a
+    auth:
+      mode: auto
+    tls:
+      caFile: /etc/redfish/ca.pem
+      insecureSkipVerify: false
+
+execution:
+  allowPartialResults: true
+  allowUnboundedFanout: false
+  maxDevicesPerQuery: 32
+  maxConcurrentDevices: 8
+  perDeviceTimeout: 15s
+  totalTimeout: 45s
+  maxRowsPerDevice: 10000
+  maxRowsPerQuery: 50000
+  maxPagesPerCollection: 100
+  maxResponseBytes: 8MiB
+  batchRows: 128
+  retry:
+    maxAttempts: 3
+    minBackoff: 100ms
+    maxBackoff: 2s
