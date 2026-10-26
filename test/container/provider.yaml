@@ -1,0 +1,46 @@
+listen: "0.0.0.0:50051"
+
+profiles:
+  - inventory-core
+
+credentials:
+  synthetic:
+    username:
+      env: REDFISH_E2E_USERNAME
+    password:
+      env: REDFISH_E2E_PASSWORD
+
+devices:
+  - namespace: e2e
+    deviceId: bmc-a
+    endpoint: https://bmc-a:8443
+    credential: synthetic
+    auth:
+      mode: basic
+    tls:
+      insecureSkipVerify: true
+  - namespace: e2e
+    deviceId: bmc-b
+    endpoint: https://bmc-b:8443
+    credential: synthetic
+    auth:
+      mode: basic
+    tls:
+      insecureSkipVerify: true
+
+execution:
+  allowPartialResults: false
+  allowUnboundedFanout: true
+  maxDevicesPerQuery: 2
+  maxConcurrentDevices: 2
+  perDeviceTimeout: 2s
+  totalTimeout: 10s
+  maxRowsPerDevice: 10
+  maxRowsPerQuery: 20
+  maxPagesPerCollection: 4
+  maxResponseBytes: 1MiB
+  batchRows: 2
+  retry:
+    maxAttempts: 1
+    minBackoff: 10ms
+    maxBackoff: 10ms

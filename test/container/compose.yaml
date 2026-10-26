@@ -1,0 +1,76 @@
+services:
+  bmc-a:
+    build:
+      context: ../..
+      dockerfile: test/container/Dockerfile
+      target: mock
+    environment:
+      REDFISH_MOCK_ID: bmc-a
+      REDFISH_MOCK_USERNAME: operator
+      REDFISH_MOCK_PASSWORD: synthetic-password
+      REDFISH_MOCK_POWER_WATTS: "248.5"
+      REDFISH_MOCK_TEMPERATURE_CELSIUS: "27.25"
+      REDFISH_MOCK_HUMIDITY_PERCENT: "41"
+      REDFISH_MOCK_FAN_RPM: "4800"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  bmc-b:
+    build:
+      context: ../..
+      dockerfile: test/container/Dockerfile
+      target: mock
+    environment:
+      REDFISH_MOCK_ID: bmc-b
+      REDFISH_MOCK_USERNAME: operator
+      REDFISH_MOCK_PASSWORD: synthetic-password
+      REDFISH_MOCK_POWER_WATTS: "312.75"
+      REDFISH_MOCK_TEMPERATURE_CELSIUS: "31.5"
+      REDFISH_MOCK_HUMIDITY_PERCENT: "46.5"
+      REDFISH_MOCK_FAN_RPM: "5600"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  provider:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    depends_on:
+      - bmc-a
+      - bmc-b
+    environment:
+      REDFISH_E2E_USERNAME: operator
+      REDFISH_E2E_PASSWORD: synthetic-password
+    volumes:
+      - ./provider.yaml:/etc/kubling/provider.yaml:ro
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  verifier:
+    build:
+      context: ../..
+      dockerfile: test/container/Dockerfile
+      target: verifier
+    depends_on:
+      - provider
+    environment:
+      KUBLING_REDFISH_E2E_ADDRESS: provider:50051
+      KUBLING_REDFISH_E2E_BMCS: https://bmc-a:8443/redfish/v1/,https://bmc-b:8443/redfish/v1/
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  default:
+    internal: true
