@@ -1,0 +1,1962 @@
+formatVersion: 2
+name: inventory-core
+namespace: redfish
+
+serviceRoot:
+  schema: ServiceRoot.v1_22_0.json
+  definition: ServiceRoot
+
+tables:
+  - name: NAMESPACES
+    annotation: Configured Redfish namespaces and their device cardinality
+    discovery:
+      kind: registry
+    stableKey: [namespace]
+    routing: []
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_count
+        source: device_count
+        annotation: Number of configured Redfish devices in the namespace
+
+  - name: DEVICES
+    annotation: Configured Redfish services and their observed service identity
+    resource:
+      schema: ServiceRoot.v1_22_0.json
+      definition: ServiceRoot
+    discovery:
+      kind: singleton
+      uri: /redfish/v1/
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish resource URI
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the service root was observed
+      - name: service_uuid
+        source: payload
+        pointer: /UUID
+      - name: vendor
+        source: payload
+        pointer: /Vendor
+      - name: product
+        source: payload
+        pointer: /Product
+      - name: redfish_version
+        source: payload
+        pointer: /RedfishVersion
+
+  - name: SYSTEMS
+    annotation: Redfish ComputerSystem inventory and current state
+    resource:
+      schema: ComputerSystem.v1_29_0.json
+      definition: ComputerSystem
+    discovery:
+      kind: collection
+      pointer: /Systems/@odata.id
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish resource URI
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the resource was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: status_health_rollup
+        source: payload
+        pointer: /Status/HealthRollup
+      - name: system_type
+        source: payload
+        pointer: /SystemType
+      - name: manufacturer
+        source: payload
+        pointer: /Manufacturer
+      - name: model
+        source: payload
+        pointer: /Model
+      - name: sku
+        source: payload
+        pointer: /SKU
+      - name: serial_number
+        source: payload
+        pointer: /SerialNumber
+      - name: part_number
+        source: payload
+        pointer: /PartNumber
+      - name: uuid
+        source: payload
+        pointer: /UUID
+      - name: bios_version
+        source: payload
+        pointer: /BiosVersion
+      - name: host_name
+        source: payload
+        pointer: /HostName
+      - name: power_state
+        source: payload
+        pointer: /PowerState
+
+  - name: PROCESSORS
+    annotation: Processors discovered below Redfish computer systems
+    resource:
+      schema: Processor.v1_24_0.json
+      definition: Processor
+    discovery:
+      kind: graph
+      routes:
+        - mode: union
+          prefix:
+            - kind: collection
+              pointer: /Systems/@odata.id
+              resource:
+                schema: ComputerSystem.v1_29_0.json
+                definition: ComputerSystem
+              capture: system_uri
+          branches:
+            - name: system_processors
+              steps:
+                - kind: collection
+                  pointer: /Processors/@odata.id
+                  resource:
+                    schema: Processor.v1_24_0.json
+                    definition: Processor
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish processor URI
+      - name: system_uri
+        source: context
+        context: system_uri
+        annotation: Canonical URI of the containing computer system
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the processor was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: status_health_rollup
+        source: payload
+        pointer: /Status/HealthRollup
+      - name: processor_type
+        source: payload
+        pointer: /ProcessorType
+      - name: architecture
+        source: payload
+        pointer: /ProcessorArchitecture
+      - name: instruction_set
+        source: payload
+        pointer: /InstructionSet
+      - name: manufacturer
+        source: payload
+        pointer: /Manufacturer
+      - name: model
+        source: payload
+        pointer: /Model
+      - name: socket
+        source: payload
+        pointer: /Socket
+      - name: total_cores
+        source: payload
+        pointer: /TotalCores
+      - name: total_threads
+        source: payload
+        pointer: /TotalThreads
+      - name: max_speed_mhz
+        source: payload
+        pointer: /MaxSpeedMHz
+      - name: operating_speed_mhz
+        source: payload
+        pointer: /OperatingSpeedMHz
+      - name: firmware_version
+        source: payload
+        pointer: /FirmwareVersion
+
+  - name: MEMORY_MODULES
+    annotation: Memory modules discovered below Redfish computer systems
+    resource:
+      schema: Memory.v1_24_0.json
+      definition: Memory
+    discovery:
+      kind: graph
+      routes:
+        - mode: union
+          prefix:
+            - kind: collection
+              pointer: /Systems/@odata.id
+              resource:
+                schema: ComputerSystem.v1_29_0.json
+                definition: ComputerSystem
+              capture: system_uri
+          branches:
+            - name: system_memory
+              steps:
+                - kind: collection
+                  pointer: /Memory/@odata.id
+                  resource:
+                    schema: Memory.v1_24_0.json
+                    definition: Memory
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish memory module URI
+      - name: system_uri
+        source: context
+        context: system_uri
+        annotation: Canonical URI of the containing computer system
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the memory module was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: status_health_rollup
+        source: payload
+        pointer: /Status/HealthRollup
+      - name: memory_device_type
+        source: payload
+        pointer: /MemoryDeviceType
+      - name: base_module_type
+        source: payload
+        pointer: /BaseModuleType
+      - name: manufacturer
+        source: payload
+        pointer: /Manufacturer
+      - name: model
+        source: payload
+        pointer: /Model
+      - name: serial_number
+        source: payload
+        pointer: /SerialNumber
+      - name: part_number
+        source: payload
+        pointer: /PartNumber
+      - name: device_locator
+        source: payload
+        pointer: /DeviceLocator
+      - name: capacity_mib
+        source: payload
+        pointer: /CapacityMiB
+      - name: operating_speed_mhz
+        source: payload
+        pointer: /OperatingSpeedMhz
+      - name: data_width_bits
+        source: payload
+        pointer: /DataWidthBits
+      - name: bus_width_bits
+        source: payload
+        pointer: /BusWidthBits
+      - name: error_correction
+        source: payload
+        pointer: /ErrorCorrection
+
+  - name: STORAGE_SUBSYSTEMS
+    annotation: Storage subsystems discovered below Redfish computer systems
+    resource:
+      schema: Storage.v1_23_0.json
+      definition: Storage
+    discovery:
+      kind: graph
+      routes:
+        - mode: union
+          prefix:
+            - kind: collection
+              pointer: /Systems/@odata.id
+              resource:
+                schema: ComputerSystem.v1_29_0.json
+                definition: ComputerSystem
+              capture: system_uri
+          branches:
+            - name: system_storage
+              steps:
+                - kind: collection
+                  pointer: /Storage/@odata.id
+                  resource:
+                    schema: Storage.v1_23_0.json
+                    definition: Storage
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish storage subsystem URI
+      - name: system_uri
+        source: context
+        context: system_uri
+        annotation: Canonical URI of the containing computer system
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the storage subsystem was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: status_health_rollup
+        source: payload
+        pointer: /Status/HealthRollup
+      - name: encryption_mode
+        source: payload
+        pointer: /EncryptionMode
+      - name: drive_count
+        source: payload
+        pointer: /Drives@odata.count
+
+  - name: STORAGE_CONTROLLERS
+    annotation: Modern and legacy storage controllers normalized per storage subsystem
+    resource:
+      schema: StorageController.v1_12_0.json
+      definition: StorageController
+    discovery:
+      kind: graph
+      routes:
+        - mode: fallback
+          prefix:
+            - kind: collection
+              pointer: /Systems/@odata.id
+              resource:
+                schema: ComputerSystem.v1_29_0.json
+                definition: ComputerSystem
+              capture: system_uri
+            - kind: collection
+              pointer: /Storage/@odata.id
+              resource:
+                schema: Storage.v1_23_0.json
+                definition: Storage
+              capture: storage_uri
+          branches:
+            - name: modern_storage_controllers
+              variant: modern
+              steps:
+                - kind: collection
+                  pointer: /Controllers/@odata.id
+                  resource:
+                    schema: StorageController.v1_12_0.json
+                    definition: StorageController
+            - name: legacy_storage_controllers
+              variant: legacy
+              steps:
+                - kind: embedded
+                  pointer: /StorageControllers
+                  resource:
+                    schema: Storage.v1_23_0.json
+                    definition: StorageController
+              mappings:
+                redfish_id:
+                  pointer: /MemberId
+                odata_type:
+                  omit: true
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish storage controller URI
+      - name: system_uri
+        source: context
+        context: system_uri
+        annotation: Canonical URI of the containing computer system
+      - name: storage_uri
+        source: context
+        context: storage_uri
+        annotation: Canonical URI of the containing storage subsystem
+      - name: model_source
+        source: variant
+        annotation: Redfish model generation used for this row
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+        annotation: Redfish resource or embedded member identifier
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+        annotation: Redfish OData type when supplied by the model
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the storage controller was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: status_health_rollup
+        source: payload
+        pointer: /Status/HealthRollup
+      - name: manufacturer
+        source: payload
+        pointer: /Manufacturer
+      - name: model
+        source: payload
+        pointer: /Model
+      - name: serial_number
+        source: payload
+        pointer: /SerialNumber
+      - name: part_number
+        source: payload
+        pointer: /PartNumber
+      - name: firmware_version
+        source: payload
+        pointer: /FirmwareVersion
+      - name: speed_gbps
+        source: payload
+        pointer: /SpeedGbps
+      - name: supported_controller_protocols
+        source: payload
+        pointer: /SupportedControllerProtocols
+      - name: supported_device_protocols
+        source: payload
+        pointer: /SupportedDeviceProtocols
+      - name: supported_raid_types
+        source: payload
+        pointer: /SupportedRAIDTypes
+
+  - name: DRIVES
+    annotation: Drives discovered through storage subsystems or chassis collections
+    resource:
+      schema: Drive.v1_22_0.json
+      definition: Drive
+    discovery:
+      kind: graph
+      routes:
+        - mode: union
+          prefix:
+            - kind: collection
+              pointer: /Systems/@odata.id
+              resource:
+                schema: ComputerSystem.v1_29_0.json
+                definition: ComputerSystem
+            - kind: collection
+              pointer: /Storage/@odata.id
+              resource:
+                schema: Storage.v1_23_0.json
+                definition: Storage
+          branches:
+            - name: storage_drives_inventory
+              steps:
+                - kind: linked
+                  pointer: /Drives
+                  resource:
+                    schema: Drive.v1_22_0.json
+                    definition: Drive
+        - mode: union
+          prefix:
+            - kind: collection
+              pointer: /Chassis/@odata.id
+              resource:
+                schema: Chassis.v1_29_0.json
+                definition: Chassis
+          branches:
+            - name: chassis_drives_inventory
+              steps:
+                - kind: collection
+                  pointer: /Drives/@odata.id
+                  resource:
+                    schema: Drive.v1_22_0.json
+                    definition: Drive
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish drive URI
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the drive was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: status_health_rollup
+        source: payload
+        pointer: /Status/HealthRollup
+      - name: manufacturer
+        source: payload
+        pointer: /Manufacturer
+      - name: model
+        source: payload
+        pointer: /Model
+      - name: serial_number
+        source: payload
+        pointer: /SerialNumber
+      - name: part_number
+        source: payload
+        pointer: /PartNumber
+      - name: capacity_bytes
+        source: payload
+        pointer: /CapacityBytes
+      - name: block_size_bytes
+        source: payload
+        pointer: /BlockSizeBytes
+      - name: media_type
+        source: payload
+        pointer: /MediaType
+      - name: protocol
+        source: payload
+        pointer: /Protocol
+      - name: rotation_speed_rpm
+        source: payload
+        pointer: /RotationSpeedRPM
+      - name: firmware_version
+        source: payload
+        pointer: /FirmwareVersion
+      - name: failure_predicted
+        source: payload
+        pointer: /FailurePredicted
+      - name: predicted_media_life_left_percent
+        source: payload
+        pointer: /PredictedMediaLifeLeftPercent
+      - name: encryption_status
+        source: payload
+        pointer: /EncryptionStatus
+
+  - name: ETHERNET_INTERFACES
+    annotation: Ethernet interfaces owned by Redfish systems or managers
+    resource:
+      schema: EthernetInterface.v1_12_6.json
+      definition: EthernetInterface
+    discovery:
+      kind: graph
+      routes:
+        - mode: union
+          prefix:
+            - kind: collection
+              pointer: /Systems/@odata.id
+              resource:
+                schema: ComputerSystem.v1_29_0.json
+                definition: ComputerSystem
+              capture: owner_uri
+          branches:
+            - name: system_ethernet_interfaces
+              variant: system
+              steps:
+                - kind: collection
+                  pointer: /EthernetInterfaces/@odata.id
+                  resource:
+                    schema: EthernetInterface.v1_12_6.json
+                    definition: EthernetInterface
+        - mode: union
+          prefix:
+            - kind: collection
+              pointer: /Managers/@odata.id
+              resource:
+                schema: Manager.v1_25_0.json
+                definition: Manager
+              capture: owner_uri
+          branches:
+            - name: manager_ethernet_interfaces
+              variant: manager
+              steps:
+                - kind: collection
+                  pointer: /EthernetInterfaces/@odata.id
+                  resource:
+                    schema: EthernetInterface.v1_12_6.json
+                    definition: EthernetInterface
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish Ethernet interface URI
+      - name: owner_kind
+        source: variant
+        annotation: Kind of Redfish resource that owns the interface
+      - name: owner_uri
+        source: context
+        context: owner_uri
+        annotation: Canonical URI of the owning system or manager
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the Ethernet interface was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: interface_enabled
+        source: payload
+        pointer: /InterfaceEnabled
+      - name: link_status
+        source: payload
+        pointer: /LinkStatus
+      - name: mac_address
+        source: payload
+        pointer: /MACAddress
+      - name: permanent_mac_address
+        source: payload
+        pointer: /PermanentMACAddress
+      - name: speed_mbps
+        source: payload
+        pointer: /SpeedMbps
+      - name: mtu_size
+        source: payload
+        pointer: /MTUSize
+      - name: full_duplex
+        source: payload
+        pointer: /FullDuplex
+      - name: auto_neg
+        source: payload
+        pointer: /AutoNeg
+      - name: host_name
+        source: payload
+        pointer: /HostName
+      - name: fqdn
+        source: payload
+        pointer: /FQDN
+      - name: ipv4_addresses
+        source: payload
+        pointer: /IPv4Addresses
+      - name: ipv6_addresses
+        source: payload
+        pointer: /IPv6Addresses
+  - name: SOFTWARE_INVENTORY
+    annotation: Firmware and software inventory exposed by the Redfish update service
+    resource:
+      schema: SoftwareInventory.v1_15_0.json
+      definition: SoftwareInventory
+    discovery:
+      kind: graph
+      routes:
+        - mode: union
+          prefix:
+            - kind: singleton
+              pointer: /UpdateService/@odata.id
+              resource:
+                schema: UpdateService.v1_17_1.json
+                definition: UpdateService
+          branches:
+            - name: firmware_inventory
+              variant: firmware
+              steps:
+                - kind: collection
+                  pointer: /FirmwareInventory/@odata.id
+                  resource:
+                    schema: SoftwareInventory.v1_15_0.json
+                    definition: SoftwareInventory
+            - name: software_inventory
+              variant: software
+              steps:
+                - kind: collection
+                  pointer: /SoftwareInventory/@odata.id
+                  resource:
+                    schema: SoftwareInventory.v1_15_0.json
+                    definition: SoftwareInventory
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish software inventory URI
+      - name: inventory_kind
+        source: variant
+        annotation: Firmware or software inventory classification
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the software inventory item was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: version
+        source: payload
+        pointer: /Version
+      - name: software_id
+        source: payload
+        pointer: /SoftwareId
+      - name: manufacturer
+        source: payload
+        pointer: /Manufacturer
+      - name: release_date
+        source: payload
+        pointer: /ReleaseDate
+      - name: active
+        source: payload
+        pointer: /Active
+      - name: updateable
+        source: payload
+        pointer: /Updateable
+      - name: write_protected
+        source: payload
+        pointer: /WriteProtected
+      - name: lowest_supported_version
+        source: payload
+        pointer: /LowestSupportedVersion
+      - name: related_item_count
+        source: payload
+        pointer: /RelatedItem@odata.count
+
+  - name: CHASSIS
+    annotation: Redfish Chassis physical enclosure inventory and current state
+    resource:
+      schema: Chassis.v1_29_0.json
+      definition: Chassis
+    discovery:
+      kind: collection
+      pointer: /Chassis/@odata.id
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish resource URI
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the resource was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: status_health_rollup
+        source: payload
+        pointer: /Status/HealthRollup
+      - name: chassis_type
+        source: payload
+        pointer: /ChassisType
+      - name: manufacturer
+        source: payload
+        pointer: /Manufacturer
+      - name: model
+        source: payload
+        pointer: /Model
+      - name: sku
+        source: payload
+        pointer: /SKU
+      - name: serial_number
+        source: payload
+        pointer: /SerialNumber
+      - name: part_number
+        source: payload
+        pointer: /PartNumber
+      - name: uuid
+        source: payload
+        pointer: /UUID
+      - name: version
+        source: payload
+        pointer: /Version
+      - name: asset_tag
+        source: payload
+        pointer: /AssetTag
+      - name: power_state
+        source: payload
+        pointer: /PowerState
+
+  - name: MANAGERS
+    annotation: Redfish Manager controller inventory and current state
+    resource:
+      schema: Manager.v1_25_0.json
+      definition: Manager
+    discovery:
+      kind: collection
+      pointer: /Managers/@odata.id
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish resource URI
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the resource was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: status_health_rollup
+        source: payload
+        pointer: /Status/HealthRollup
+      - name: manager_type
+        source: payload
+        pointer: /ManagerType
+      - name: manufacturer
+        source: payload
+        pointer: /Manufacturer
+      - name: model
+        source: payload
+        pointer: /Model
+      - name: serial_number
+        source: payload
+        pointer: /SerialNumber
+      - name: part_number
+        source: payload
+        pointer: /PartNumber
+      - name: uuid
+        source: payload
+        pointer: /UUID
+      - name: service_entry_point_uuid
+        source: payload
+        pointer: /ServiceEntryPointUUID
+      - name: firmware_version
+        source: payload
+        pointer: /FirmwareVersion
+      - name: version
+        source: payload
+        pointer: /Version
+      - name: power_state
+        source: payload
+        pointer: /PowerState
+
+  - name: SYSTEM_CHASSIS
+    annotation: Materialized links from computer systems to chassis resources
+    resource:
+      schema: odata-v4.json
+      definition: idRef
+    discovery:
+      kind: graph
+      routes:
+        - mode: union
+          prefix:
+            - kind: collection
+              pointer: /Systems/@odata.id
+              resource:
+                schema: ComputerSystem.v1_29_0.json
+                definition: ComputerSystem
+              capture: source_uri
+          branches:
+            - name: system_chassis_links
+              steps:
+                - kind: links
+                  pointer: /Links/Chassis
+                  resource:
+                    schema: odata-v4.json
+                    definition: idRef
+    stableKey: [namespace, device_id, source_uri, target_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: source_uri
+        source: context
+        context: source_uri
+        annotation: Canonical URI of the source computer system
+      - name: target_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical URI of the target chassis
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the relationship was observed
+
+  - name: SYSTEM_MANAGERS
+    annotation: Materialized links from computer systems to manager resources
+    resource:
+      schema: odata-v4.json
+      definition: idRef
+    discovery:
+      kind: graph
+      routes:
+        - mode: union
+          prefix:
+            - kind: collection
+              pointer: /Systems/@odata.id
+              resource:
+                schema: ComputerSystem.v1_29_0.json
+                definition: ComputerSystem
+              capture: source_uri
+          branches:
+            - name: system_manager_links
+              steps:
+                - kind: links
+                  pointer: /Links/ManagedBy
+                  resource:
+                    schema: odata-v4.json
+                    definition: idRef
+    stableKey: [namespace, device_id, source_uri, target_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: source_uri
+        source: context
+        context: source_uri
+        annotation: Canonical URI of the source computer system
+      - name: target_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical URI of the target manager
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the relationship was observed
+
+  - name: STORAGE_DRIVES
+    annotation: Materialized links from storage subsystems to drive resources
+    resource:
+      schema: odata-v4.json
+      definition: idRef
+    discovery:
+      kind: graph
+      routes:
+        - mode: union
+          prefix:
+            - kind: collection
+              pointer: /Systems/@odata.id
+              resource:
+                schema: ComputerSystem.v1_29_0.json
+                definition: ComputerSystem
+            - kind: collection
+              pointer: /Storage/@odata.id
+              resource:
+                schema: Storage.v1_23_0.json
+                definition: Storage
+              capture: source_uri
+          branches:
+            - name: storage_drive_links
+              steps:
+                - kind: links
+                  pointer: /Drives
+                  resource:
+                    schema: odata-v4.json
+                    definition: idRef
+    stableKey: [namespace, device_id, source_uri, target_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: source_uri
+        source: context
+        context: source_uri
+        annotation: Canonical URI of the source storage subsystem
+      - name: target_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical URI of the target drive
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the relationship was observed
+
+  - name: CHASSIS_DRIVES
+    annotation: Materialized links from chassis resources to drive resources
+    resource:
+      schema: odata-v4.json
+      definition: idRef
+    discovery:
+      kind: graph
+      routes:
+        - mode: union
+          prefix:
+            - kind: collection
+              pointer: /Chassis/@odata.id
+              resource:
+                schema: Chassis.v1_29_0.json
+                definition: Chassis
+              capture: source_uri
+          branches:
+            - name: chassis_drive_links
+              steps:
+                - kind: collection_links
+                  pointer: /Drives/@odata.id
+                  resource:
+                    schema: odata-v4.json
+                    definition: idRef
+    stableKey: [namespace, device_id, source_uri, target_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: source_uri
+        source: context
+        context: source_uri
+        annotation: Canonical URI of the source chassis
+      - name: target_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical URI of the target drive
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the relationship was observed
+
+  - name: SOFTWARE_INVENTORY_TARGETS
+    annotation: Materialized links from software inventory items to affected resources
+    resource:
+      schema: odata-v4.json
+      definition: idRef
+    discovery:
+      kind: graph
+      routes:
+        - mode: union
+          prefix:
+            - kind: singleton
+              pointer: /UpdateService/@odata.id
+              resource:
+                schema: UpdateService.v1_17_1.json
+                definition: UpdateService
+          branches:
+            - name: firmware_inventory_targets
+              steps:
+                - kind: collection
+                  pointer: /FirmwareInventory/@odata.id
+                  resource:
+                    schema: SoftwareInventory.v1_15_0.json
+                    definition: SoftwareInventory
+                  capture: source_uri
+                - kind: links
+                  pointer: /RelatedItem
+                  resource:
+                    schema: odata-v4.json
+                    definition: idRef
+            - name: software_inventory_targets
+              steps:
+                - kind: collection
+                  pointer: /SoftwareInventory/@odata.id
+                  resource:
+                    schema: SoftwareInventory.v1_15_0.json
+                    definition: SoftwareInventory
+                  capture: source_uri
+                - kind: links
+                  pointer: /RelatedItem
+                  resource:
+                    schema: odata-v4.json
+                    definition: idRef
+    stableKey: [namespace, device_id, source_uri, target_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: source_uri
+        source: context
+        context: source_uri
+        annotation: Canonical URI of the software inventory item
+      - name: target_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical URI of the affected resource
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the relationship was observed
+
+  - name: POWER_SUBSYSTEMS
+    annotation: Modern power subsystems with deterministic fallback to legacy chassis power resources
+    resource:
+      schema: PowerSubsystem.v1_2_0.json
+      definition: PowerSubsystem
+    discovery:
+      kind: graph
+      routes:
+        - mode: fallback
+          prefix:
+            - kind: collection
+              pointer: /Chassis/@odata.id
+              resource:
+                schema: Chassis.v1_29_0.json
+                definition: Chassis
+              capture: chassis_uri
+          branches:
+            - name: modern_power_subsystem
+              variant: modern
+              steps:
+                - kind: singleton
+                  pointer: /PowerSubsystem/@odata.id
+                  resource:
+                    schema: PowerSubsystem.v1_2_0.json
+                    definition: PowerSubsystem
+            - name: legacy_power_resource
+              variant: legacy
+              steps:
+                - kind: singleton
+                  pointer: /Power/@odata.id
+                  resource:
+                    schema: Power.v1_7_3.json
+                    definition: Power
+              mappings:
+                status_state:
+                  omit: true
+                status_health:
+                  omit: true
+                status_health_rollup:
+                  omit: true
+                capacity_watts:
+                  omit: true
+                allocated_watts:
+                  omit: true
+                requested_watts:
+                  omit: true
+                redundancy:
+                  pointer: /Redundancy
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical URI of the power subsystem or legacy power resource
+      - name: chassis_uri
+        source: context
+        context: chassis_uri
+        annotation: Canonical URI of the containing chassis
+      - name: model_source
+        source: variant
+        annotation: Modern or legacy Redfish power model used for this row
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the power subsystem was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+        annotation: Operational state when supplied by the selected model
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+        annotation: Health when supplied by the selected model
+      - name: status_health_rollup
+        source: payload
+        pointer: /Status/HealthRollup
+        annotation: Rolled-up health when supplied by the selected model
+      - name: capacity_watts
+        source: payload
+        pointer: /CapacityWatts
+        annotation: Total power capacity of the subsystem in watts
+      - name: allocated_watts
+        source: payload
+        pointer: /Allocation/AllocatedWatts
+        annotation: Power currently allocated to the subsystem in watts
+      - name: requested_watts
+        source: payload
+        pointer: /Allocation/RequestedWatts
+        annotation: Power currently requested by the subsystem in watts
+      - name: redundancy
+        source: payload
+        pointer: /PowerSupplyRedundancy
+        annotation: DMTF power-supply redundancy groups for the selected model
+
+  - name: CHASSIS_ENVIRONMENT_METRICS
+    annotation: Current chassis power and environmental observations with legacy power-control fallback
+    resource:
+      schema: EnvironmentMetrics.v1_7_0.json
+      definition: EnvironmentMetrics
+    discovery:
+      kind: graph
+      routes:
+        - mode: fallback
+          prefix:
+            - kind: collection
+              pointer: /Chassis/@odata.id
+              resource:
+                schema: Chassis.v1_29_0.json
+                definition: Chassis
+              capture: chassis_uri
+          branches:
+            - name: modern_environment_metrics
+              variant: modern
+              steps:
+                - kind: singleton
+                  pointer: /EnvironmentMetrics/@odata.id
+                  resource:
+                    schema: EnvironmentMetrics.v1_7_0.json
+                    definition: EnvironmentMetrics
+              mappings:
+                average_consumed_watts:
+                  omit: true
+                minimum_consumed_watts:
+                  omit: true
+                maximum_consumed_watts:
+                  omit: true
+                measurement_interval_minutes:
+                  omit: true
+            - name: legacy_power_control
+              variant: legacy
+              steps:
+                - kind: singleton
+                  pointer: /Power/@odata.id
+                  resource:
+                    schema: Power.v1_7_3.json
+                    definition: Power
+                - kind: embedded
+                  pointer: /PowerControl
+                  resource:
+                    schema: Power.v1_7_3.json
+                    definition: PowerControl
+              mappings:
+                redfish_id:
+                  pointer: /MemberId
+                odata_type:
+                  omit: true
+                power_watts:
+                  pointer: /PowerConsumedWatts
+                energy_kwh:
+                  omit: true
+                energy_joules:
+                  omit: true
+                temperature_celsius:
+                  omit: true
+                ambient_temperature_celsius:
+                  omit: true
+                humidity_percent:
+                  omit: true
+                power_load_percent:
+                  omit: true
+                average_consumed_watts:
+                  pointer: /PowerMetrics/AverageConsumedWatts
+                minimum_consumed_watts:
+                  pointer: /PowerMetrics/MinConsumedWatts
+                maximum_consumed_watts:
+                  pointer: /PowerMetrics/MaxConsumedWatts
+                measurement_interval_minutes:
+                  pointer: /PowerMetrics/IntervalInMin
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical URI of the environment metrics or legacy power-control member
+      - name: chassis_uri
+        source: context
+        context: chassis_uri
+        annotation: Canonical URI of the containing chassis
+      - name: model_source
+        source: variant
+        annotation: Modern or legacy Redfish observation model used for this row
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+        annotation: Redfish resource or embedded member identifier
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+        annotation: Redfish OData type when supplied by the selected model
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the metrics were observed
+      - name: power_watts
+        source: payload
+        pointer: /PowerWatts/Reading
+        annotation: Current power consumption in watts
+      - name: energy_kwh
+        source: payload
+        pointer: /EnergykWh/Reading
+        annotation: Accumulated energy consumption in kilowatt-hours when available
+      - name: energy_joules
+        source: payload
+        pointer: /EnergyJoules/Reading
+        annotation: Accumulated energy consumption in joules when available
+      - name: temperature_celsius
+        source: payload
+        pointer: /TemperatureCelsius/Reading
+        annotation: Representative chassis temperature in degrees Celsius
+      - name: ambient_temperature_celsius
+        source: payload
+        pointer: /AmbientTemperatureCelsius/Reading
+        annotation: Ambient chassis temperature in degrees Celsius
+      - name: humidity_percent
+        source: payload
+        pointer: /HumidityPercent/Reading
+        annotation: Relative humidity percentage
+      - name: power_load_percent
+        source: payload
+        pointer: /PowerLoadPercent/Reading
+        annotation: Current power load percentage
+      - name: average_consumed_watts
+        source: payload
+        pointer: /PowerWatts/AverageReading
+        annotation: Average power over the reported measurement interval when available
+      - name: minimum_consumed_watts
+        source: payload
+        pointer: /PowerWatts/LowestReading
+        annotation: Minimum power over the reported measurement interval when available
+      - name: maximum_consumed_watts
+        source: payload
+        pointer: /PowerWatts/PeakReading
+        annotation: Maximum power over the reported measurement interval when available
+      - name: measurement_interval_minutes
+        source: payload
+        pointer: /PowerWatts/AveragingInterval
+        annotation: Measurement interval reported for summarized power observations
+
+  - name: POWER_SUPPLIES
+    annotation: Power-supply inventory and current state with modern-first legacy fallback
+    resource:
+      schema: PowerSupply.v1_8_0.json
+      definition: PowerSupply
+    discovery:
+      kind: graph
+      routes:
+        - mode: fallback
+          prefix:
+            - kind: collection
+              pointer: /Chassis/@odata.id
+              resource:
+                schema: Chassis.v1_29_0.json
+                definition: Chassis
+              capture: chassis_uri
+          branches:
+            - name: modern_power_supplies
+              variant: modern
+              steps:
+                - kind: singleton
+                  pointer: /PowerSubsystem/@odata.id
+                  resource:
+                    schema: PowerSubsystem.v1_2_0.json
+                    definition: PowerSubsystem
+                - kind: collection
+                  pointer: /PowerSupplies/@odata.id
+                  resource:
+                    schema: PowerSupply.v1_8_0.json
+                    definition: PowerSupply
+              mappings:
+                line_input_voltage:
+                  omit: true
+                input_watts:
+                  omit: true
+                output_watts:
+                  omit: true
+                last_output_watts:
+                  omit: true
+                redundancy:
+                  omit: true
+            - name: legacy_power_supplies
+              variant: legacy
+              steps:
+                - kind: singleton
+                  pointer: /Power/@odata.id
+                  resource:
+                    schema: Power.v1_7_3.json
+                    definition: Power
+                - kind: embedded
+                  pointer: /PowerSupplies
+                  resource:
+                    schema: Power.v1_7_3.json
+                    definition: PowerSupply
+              mappings:
+                redfish_id:
+                  pointer: /MemberId
+                odata_type:
+                  omit: true
+                input_voltage_type:
+                  pointer: /LineInputVoltageType
+                line_input_voltage:
+                  pointer: /LineInputVoltage
+                input_watts:
+                  pointer: /PowerInputWatts
+                output_watts:
+                  pointer: /PowerOutputWatts
+                last_output_watts:
+                  pointer: /LastPowerOutputWatts
+                redundancy:
+                  pointer: /Redundancy
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish power-supply URI
+      - name: chassis_uri
+        source: context
+        context: chassis_uri
+        annotation: Canonical URI of the containing chassis
+      - name: model_source
+        source: variant
+        annotation: Modern or legacy Redfish power-supply model used for this row
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+        annotation: Redfish resource or embedded member identifier
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+        annotation: Redfish OData type when supplied by the selected model
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the power supply was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: status_health_rollup
+        source: payload
+        pointer: /Status/HealthRollup
+      - name: manufacturer
+        source: payload
+        pointer: /Manufacturer
+      - name: model
+        source: payload
+        pointer: /Model
+      - name: serial_number
+        source: payload
+        pointer: /SerialNumber
+      - name: part_number
+        source: payload
+        pointer: /PartNumber
+      - name: firmware_version
+        source: payload
+        pointer: /FirmwareVersion
+      - name: power_supply_type
+        source: payload
+        pointer: /PowerSupplyType
+      - name: capacity_watts
+        source: payload
+        pointer: /PowerCapacityWatts
+      - name: input_voltage_type
+        source: payload
+        pointer: /InputNominalVoltageType
+        annotation: Nominal input voltage type reported by the selected model
+      - name: line_input_voltage
+        source: payload
+        pointer: /LineInputVoltage
+        annotation: Current line input voltage when supplied by the selected model
+      - name: input_watts
+        source: payload
+        pointer: /PowerInputWatts
+        annotation: Current power input in watts when supplied by the selected model
+      - name: output_watts
+        source: payload
+        pointer: /PowerOutputWatts
+        annotation: Current power output in watts when supplied by the selected model
+      - name: last_output_watts
+        source: payload
+        pointer: /LastPowerOutputWatts
+        annotation: Last reported power output in watts when supplied by the selected model
+      - name: redundancy
+        source: payload
+        pointer: /Redundancy
+        annotation: Legacy per-supply redundancy data when available
+
+  - name: TEMPERATURES
+    annotation: Current temperature sensors and thresholds with modern-first legacy fallback
+    resource:
+      schema: Sensor.v1_14_0.json
+      definition: Sensor
+    discovery:
+      kind: graph
+      routes:
+        - mode: fallback
+          prefix:
+            - kind: collection
+              pointer: /Chassis/@odata.id
+              resource:
+                schema: Chassis.v1_29_0.json
+                definition: Chassis
+              capture: chassis_uri
+          branches:
+            - name: modern_temperature_sensors
+              variant: modern
+              steps:
+                - kind: collection
+                  pointer: /Sensors/@odata.id
+                  resource:
+                    schema: Sensor.v1_14_0.json
+                    definition: Sensor
+                  where:
+                    pointer: /ReadingType
+                    equals: Temperature
+            - name: legacy_temperatures
+              variant: legacy
+              steps:
+                - kind: singleton
+                  pointer: /Thermal/@odata.id
+                  resource:
+                    schema: Thermal.v1_7_3.json
+                    definition: Thermal
+                - kind: embedded
+                  pointer: /Temperatures
+                  resource:
+                    schema: Thermal.v1_7_3.json
+                    definition: Temperature
+              mappings:
+                redfish_id:
+                  pointer: /MemberId
+                odata_type:
+                  omit: true
+                reading_celsius:
+                  pointer: /ReadingCelsius
+                reading_time:
+                  omit: true
+                physical_sub_context:
+                  omit: true
+                lower_threshold_caution:
+                  pointer: /LowerThresholdNonCritical
+                lower_threshold_critical:
+                  pointer: /LowerThresholdCritical
+                lower_threshold_fatal:
+                  pointer: /LowerThresholdFatal
+                upper_threshold_caution:
+                  pointer: /UpperThresholdNonCritical
+                upper_threshold_critical:
+                  pointer: /UpperThresholdCritical
+                upper_threshold_fatal:
+                  pointer: /UpperThresholdFatal
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish temperature-sensor URI
+      - name: chassis_uri
+        source: context
+        context: chassis_uri
+        annotation: Canonical URI of the containing chassis
+      - name: model_source
+        source: variant
+        annotation: Modern or legacy Redfish thermal model used for this row
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+        annotation: Redfish resource or embedded member identifier
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+        annotation: Redfish OData type when supplied by the selected model
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the temperature was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: status_health_rollup
+        source: payload
+        pointer: /Status/HealthRollup
+      - name: reading_celsius
+        source: payload
+        pointer: /Reading
+        annotation: Current temperature reading in degrees Celsius
+      - name: reading_time
+        source: payload
+        pointer: /ReadingTime
+        annotation: Time associated with the sensor reading when available
+      - name: physical_context
+        source: payload
+        pointer: /PhysicalContext
+      - name: physical_sub_context
+        source: payload
+        pointer: /PhysicalSubContext
+        annotation: More specific physical context when supplied by the selected model
+      - name: lower_threshold_caution
+        source: payload
+        pointer: /Thresholds/LowerCaution/Reading
+        annotation: Lower caution threshold in degrees Celsius
+      - name: lower_threshold_critical
+        source: payload
+        pointer: /Thresholds/LowerCritical/Reading
+        annotation: Lower critical threshold in degrees Celsius
+      - name: lower_threshold_fatal
+        source: payload
+        pointer: /Thresholds/LowerFatal/Reading
+        annotation: Lower fatal threshold in degrees Celsius
+      - name: upper_threshold_caution
+        source: payload
+        pointer: /Thresholds/UpperCaution/Reading
+        annotation: Upper caution threshold in degrees Celsius
+      - name: upper_threshold_critical
+        source: payload
+        pointer: /Thresholds/UpperCritical/Reading
+        annotation: Upper critical threshold in degrees Celsius
+      - name: upper_threshold_fatal
+        source: payload
+        pointer: /Thresholds/UpperFatal/Reading
+        annotation: Upper fatal threshold in degrees Celsius
+
+  - name: FANS
+    annotation: Fan inventory, state and current speed with modern-first legacy fallback
+    resource:
+      schema: Fan.v1_6_0.json
+      definition: Fan
+    discovery:
+      kind: graph
+      routes:
+        - mode: fallback
+          prefix:
+            - kind: collection
+              pointer: /Chassis/@odata.id
+              resource:
+                schema: Chassis.v1_29_0.json
+                definition: Chassis
+              capture: chassis_uri
+          branches:
+            - name: modern_fans
+              variant: modern
+              steps:
+                - kind: singleton
+                  pointer: /ThermalSubsystem/@odata.id
+                  resource:
+                    schema: ThermalSubsystem.v1_5_0.json
+                    definition: ThermalSubsystem
+                - kind: collection
+                  pointer: /Fans/@odata.id
+                  resource:
+                    schema: Fan.v1_6_0.json
+                    definition: Fan
+              mappings:
+                redundancy:
+                  omit: true
+            - name: legacy_fans
+              variant: legacy
+              steps:
+                - kind: singleton
+                  pointer: /Thermal/@odata.id
+                  resource:
+                    schema: Thermal.v1_7_3.json
+                    definition: Thermal
+                - kind: embedded
+                  pointer: /Fans
+                  resource:
+                    schema: Thermal.v1_7_3.json
+                    definition: Fan
+              mappings:
+                redfish_id:
+                  pointer: /MemberId
+                odata_type:
+                  omit: true
+                speed_rpm:
+                  pointer: /Reading
+                  when:
+                    pointer: /ReadingUnits
+                    equals: RPM
+                speed_percent:
+                  pointer: /Reading
+                  when:
+                    pointer: /ReadingUnits
+                    equals: Percent
+                rated_speed_rpm:
+                  omit: true
+                power_watts:
+                  omit: true
+                redundancy:
+                  pointer: /Redundancy
+    stableKey: [namespace, device_id, resource_uri]
+    routing: [namespace, device_id]
+    columns:
+      - name: namespace
+        source: namespace
+        annotation: Operator-defined logical device grouping
+      - name: device_id
+        source: device_id
+        annotation: Operator-defined stable Redfish endpoint identity
+      - name: resource_uri
+        source: resource_uri
+        pointer: /@odata.id
+        annotation: Canonical Redfish fan URI
+      - name: chassis_uri
+        source: context
+        context: chassis_uri
+        annotation: Canonical URI of the containing chassis
+      - name: model_source
+        source: variant
+        annotation: Modern or legacy Redfish thermal model used for this row
+      - name: redfish_id
+        source: payload
+        pointer: /Id
+        annotation: Redfish resource or embedded member identifier
+      - name: name
+        source: payload
+        pointer: /Name
+      - name: odata_type
+        source: payload
+        pointer: /@odata.type
+        annotation: Redfish OData type when supplied by the selected model
+      - name: observed_at
+        source: observed_at
+        annotation: Time at which the fan was observed
+      - name: status_state
+        source: payload
+        pointer: /Status/State
+      - name: status_health
+        source: payload
+        pointer: /Status/Health
+      - name: status_health_rollup
+        source: payload
+        pointer: /Status/HealthRollup
+      - name: manufacturer
+        source: payload
+        pointer: /Manufacturer
+      - name: model
+        source: payload
+        pointer: /Model
+      - name: serial_number
+        source: payload
+        pointer: /SerialNumber
+      - name: part_number
+        source: payload
+        pointer: /PartNumber
+      - name: physical_context
+        source: payload
+        pointer: /PhysicalContext
+      - name: hot_pluggable
+        source: payload
+        pointer: /HotPluggable
+      - name: speed_rpm
+        source: payload
+        pointer: /SpeedPercent/SpeedRPM
+        annotation: Current rotational speed in revolutions per minute when available
+      - name: speed_percent
+        source: payload
+        pointer: /SpeedPercent/Reading
+        annotation: Current fan speed as a percentage when available
+      - name: rated_speed_rpm
+        source: payload
+        pointer: /RatedSpeedRPM
+      - name: power_watts
+        source: payload
+        pointer: /PowerWatts/Reading
+        annotation: Current fan power consumption in watts when available
+      - name: redundancy
+        source: payload
+        pointer: /Redundancy
+        annotation: Legacy per-fan redundancy data when available
