@@ -1,0 +1,108 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
+
+  container:
+    name: Publish container image
+    needs: validate
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME}"
+          if [[ ! "${version}" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::${version} is not a valid semantic version tag."
+            exit 1
+          fi
+
+          stable=false
+          if [[ "${version}" != *-* ]]; then
+            stable=true
+          fi
+
+          echo "stable=${stable}" >> "${GITHUB_OUTPUT}"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Generate image metadata
+        id: metadata
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+        with:
+          images: docker.io/kubling/redfish-provider
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=latest,enable=${{ steps.version.outputs.stable == 'true' }}
+          labels: |
+            org.opencontainers.image.title=Kubling Redfish Provider
+            org.opencontainers.image.description=Redfish provider for Kubling
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+
+      - name: Build and publish container image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache-from: type=gha,scope=provider-redfish
+          cache-to: type=gha,mode=max,scope=provider-redfish
+          provenance: mode=max
+          sbom: true
+
+  release:
+    name: Create GitHub release
+    needs:
+      - validate
+      - container
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --verify-tag \
+            --generate-notes \
+            --title "Redfish Provider ${{ needs.container.outputs.version }}"

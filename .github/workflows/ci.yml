@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.26.7'
+          cache: true
+
+      - name: Verify module dependencies
+        run: go mod tidy -diff
+
+      - name: Verify generated catalog
+        run: go run ./cmd/redfish-schema-gen --check
+
+      - name: Verify generated semantic fragment
+        run: go run ./cmd/redfish-semantic-gen --check
+
+      - name: Verify formatting
+        run: test -z "$(gofmt -l .)"
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race ./...
+
+      - name: Build
+        run: go build ./...
+
+  container:
+    name: Container checks
+    needs: go
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Build linux/amd64 and linux/arm64 image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          outputs: type=oci,dest=${{ runner.temp }}/kubling-provider-redfish.oci.tar
+          cache-from: type=gha,scope=provider-redfish
+          cache-to: type=gha,mode=max,scope=provider-redfish
+
+      - name: Run container end-to-end test
+        run: make container-e2e
+
+      - name: Run Kubling latest sample end-to-end test
+        run: make sample
