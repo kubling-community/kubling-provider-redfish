@@ -1,0 +1,7 @@
+{
+  "@odata.id": "/redfish/v1/Chassis/1",
+  "@odata.type": "#Chassis.v1_29_0.Chassis",
+  "Id": "chassis-a",
+  "Name": "Synthetic Chassis A",
+  "ChassisType": "RackMount"
+}

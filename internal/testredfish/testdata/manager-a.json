@@ -1,0 +1,7 @@
+{
+  "@odata.id": "/redfish/v1/Managers/1",
+  "@odata.type": "#Manager.v1_25_0.Manager",
+  "Id": "manager-a",
+  "Name": "Synthetic Manager A",
+  "ManagerType": "BMC"
+}

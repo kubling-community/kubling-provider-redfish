@@ -1,0 +1,6 @@
+{
+  "@odata.id": "/redfish/v1/Systems/1",
+  "@odata.type": "#ComputerSystem.v1_25_0.ComputerSystem",
+  "Id": "system-b",
+  "Name": "Synthetic System B"
+}
