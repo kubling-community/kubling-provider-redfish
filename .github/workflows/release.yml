@@ -98,6 +98,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - name: Download Debian packages
+        uses: actions/download-artifact@v4
+        with:
+          name: redfish-provider-release
+          path: dist
+
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -105,4 +111,5 @@ jobs:
           gh release create "${GITHUB_REF_NAME}" \
             --verify-tag \
             --generate-notes \
-            --title "Redfish Provider ${{ needs.container.outputs.version }}"
+            --title "Redfish Provider ${{ needs.container.outputs.version }}" \
+            dist/*

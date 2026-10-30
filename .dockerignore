@@ -3,6 +3,8 @@
 .idea
 .vscode
 bin
+build
+dist
 coverage
 coverage.*
 *.test
