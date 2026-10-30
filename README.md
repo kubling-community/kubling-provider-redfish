@@ -47,6 +47,21 @@ The configuration path may also be supplied through
 The provider exposes plaintext gRPC by default. Keep it on a trusted workload
 network or place appropriate transport and caller controls in front of it.
 
+## Debian package
+
+Tagged releases attach packages for `amd64` and `arm64`. Download the matching
+package from [project releases](https://github.com/kubling-community/kubling-provider-redfish/releases)
+and install it with:
+
+```sh
+sudo apt install ./kubling-redfish-provider_*.deb
+```
+
+The package installs `/usr/bin/kubling-redfish-provider` and the example
+configuration `/etc/kubling/redfish-provider.yaml.example`. It does not install
+or start a service; configure its lifecycle and access to configuration,
+credentials and CA files with the deployment's service manager.
+
 ## Querying
 
 Assuming the Kubling schema is named `redfish`, discover the configured
